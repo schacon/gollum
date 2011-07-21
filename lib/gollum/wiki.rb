@@ -165,6 +165,18 @@ module Gollum
       @file_class.new(self).find(name, version)
     end
 
+    # Public: Get document object for a wiki
+    #
+    # options
+    #   :output_path - where the document object will generate output into
+    #
+    #   :settings_file - where doc settings are, defaults to _Document.yml
+    #
+    # Returns a Gollum::Document or nil if no toc was found.
+    def document(options = {})
+      ::Gollum::Document.new(self, options)
+    end
+
     # Public: Create an in-memory Page with the given data and format. This
     # is useful for previewing what content will look like before committing
     # it to the repository.
@@ -529,6 +541,10 @@ module Gollum
       else
         []
       end
+    end
+
+    def version_sha
+      @access.ref_to_sha(@ref)
     end
 
     # Creates a reverse diff for the given SHAs on the given Gollum::Page.

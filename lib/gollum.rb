@@ -18,6 +18,7 @@ require 'gollum/file'
 require 'gollum/markup'
 require 'gollum/albino'
 require 'gollum/sanitization'
+require 'gollum/document'
 
 module Gollum
   VERSION = '1.3.0'

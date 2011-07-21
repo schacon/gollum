@@ -1,0 +1,16 @@
+Gollum Docs TODO
+================
+
+* table of contents format (_Document.yml)
+
+* generate static html (single page, paged)
+
+* read out of a subdirectory ('docs') or a branch ('gh-pages')
+
+* generate ebook stuff (epub, mobi, pdf)
+
+* extras (cover, author, etc)
+
+* use a template (use ricks fork)
+
+

@@ -44,6 +44,14 @@ def normal(text)
   text
 end
 
+def temp_path
+  t = Tempfile.new('graph')
+  fpath = t.path
+  t.unlink
+  FileUtils.mkdir_p(fpath)
+  fpath
+end
+
 # test/spec/mini 3
 # http://gist.github.com/25455
 # chris@ozmm.org

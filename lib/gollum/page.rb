@@ -62,7 +62,7 @@ module Gollum
           :creole
         when /\.(re?st(\.txt)?)$/i
           :rest
-        when /\.(asciidoc)$/i
+        when /\.(asc|asciidoc)$/i
           :asciidoc
         when /\.(pod)$/i
           :pod

@@ -168,13 +168,18 @@ module Gollum
     # Public: Get document object for a wiki
     #
     # options
-    #   :output_path - where the document object will generate output into
+    #   :output_path - where the document object will generate output into, defaults to .git/gollum/SHA/
     #
     #   :settings_file - where doc settings are, defaults to _Document.yml
     #
     # Returns a Gollum::Document or nil if no toc was found.
     def document(options = {})
       ::Gollum::Document.new(self, options)
+    end
+
+    # Public: Get path to the actual git repository
+    def git_path
+      @access.repo.path
     end
 
     # Public: Create an in-memory Page with the given data and format. This

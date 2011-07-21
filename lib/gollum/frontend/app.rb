@@ -179,13 +179,15 @@ module Precious
     end
 
     get '/document' do
-      wiki = Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
-      @ref = wiki.ref
-      @toc = wiki.document.toc
+      @wiki = Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
+      @doc = @wiki.document
       mustache :document
     end
 
-    get '/document/:type' do
+    get '/document/html' do
+      @wiki = Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
+      path = @wiki.document.generate(:base)
+      ::File.read(path)
     end
 
     get '/*' do

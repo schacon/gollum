@@ -17,7 +17,8 @@ module Gollum
     def initialize(wiki, options = {})
       @wiki = wiki
       @settings_file = options[:settings_file] || '_Document.yml'
-      @output_path = options[:output_path]
+      @output_path = options[:output_path] || ::File.join(@wiki.git_path, 'gollum', @wiki.version_sha)
+      FileUtils.mkdir_p(@output_path) if !::File.exists?(@output_path)
 
       @base_html_file = 'base.html'
       @checksums_file = 'checksums.yml'
@@ -77,7 +78,7 @@ module Gollum
         content = insert_section_ids(content)
         content = rewrite_asset_links(content)
         of.write "<!-- " + page.path + " -->\n"
-        of.write "<a target=\"" + strip_html(page.title.gsub(' ', '-')) + "\">\n"
+        of.write "<a target=\"" + strip_html(page.title.gsub(' ', '-')) + "\"/>\n"
         of.write content
         of.write "\n\n"
       end

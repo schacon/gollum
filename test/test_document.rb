@@ -40,17 +40,36 @@ context "Document" do
 
   test "does not regen html for the same site" do
     path = @doc.generate(:base)
-    mtime1 = File.mtime(path)
-    path = @doc.generate(:base)
-    mtime2 = File.mtime(path)
-    assert_equal mtime1, mtime2
+    size1 = File.size(path)
+
+    wiki = Gollum::Wiki.new(testpath("examples/doc.git"))
+    doc = wiki.document(:output_path => @path)
+    path = doc.generate(:base)
+    size2 = File.size(path)
+    assert_equal size1, size2
   end
 
   test "regens base html if commit changes" do
+    path = @doc.generate(:base)
+    size1 = File.size(path)
+
+    wiki = Gollum::Wiki.new(testpath("examples/doc.git"), :ref => 'old')
+    doc = wiki.document(:output_path => @path)
+    path = doc.generate(:base)
+    size2 = File.size(path)
+
+    assert size1 != size2
   end
 
 
-  xtest "generate single html file" do
+  test "generate single html file" do
+    path = @doc.generate(:html)
+    source = File.read(path)
+    assert_match '<h1 id="Title">', source
+    assert_match '<h2 id="Subsection-One">', source
+    assert_match '<h3 id="Sub-Subsection">', source
+    assert_match '<img src="./Mordor/eye.jpg"', source
+    assert_match 'href="#Hobbit">', source
   end
 
   xtest "generate html site" do

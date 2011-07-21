@@ -409,6 +409,15 @@ module Gollum
       tree_list(treeish || @ref)
     end
 
+    # Public: Lists all non-page files for this wiki.
+    #
+    # treeish - The String commit ID or ref to find  (default:  @ref)
+    #
+    # Returns an Array of file paths
+    def non_pages(treeish = nil)
+      non_pages_list(treeish || @ref)
+    end
+
     # Public: Returns the number of pages accessible from a commit
     #
     # ref - A String ref that is either a commit SHA or references one.
@@ -537,6 +546,23 @@ module Gollum
         tree_map_for(sha).inject([]) do |list, entry|
           next list unless @page_class.valid_page_name?(entry.name)
           list << entry.page(self, commit)
+        end
+      else
+        []
+      end
+    end
+
+    # Fill an array with a list of all non-page files
+    #
+    # ref - A String ref that is either a commit SHA or references one.
+    #
+    # Returns a flat Array of file paths
+    def non_pages_list(ref)
+      if sha = @access.ref_to_sha(ref)
+        commit = @access.commit(sha)
+        tree_map_for(sha).inject([]) do |list, entry|
+          next list if @page_class.valid_page_name?(entry.name) || entry.name[0, 1] == '_'
+          list << entry.path
         end
       else
         []

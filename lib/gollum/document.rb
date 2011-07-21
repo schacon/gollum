@@ -22,6 +22,8 @@ module Gollum
       @checksums_file = 'checksums.yml'
       @toc_file = 'toc.yml'
 
+      @single_html_file = 'single.html'
+
       parse_settings
     end
 
@@ -42,6 +44,8 @@ module Gollum
         return path
       when :html
         return generate_html
+      #when :mobi
+      #  return generate_mobi
       end
     end
 
@@ -68,13 +72,26 @@ module Gollum
 
       of = ::File.open(outfile_path, 'w+')
       pages.each do |page|
-        of.write "<!-- " + page.path + "-->\n"
-        of.write insert_section_ids(page.formatted_data)
+        content = page.formatted_data
+        content = insert_section_ids(content)
+        content = rewrite_asset_links(content)
+        of.write "<!-- " + page.path + " -->\n"
+        of.write "<a target=\"" + strip_html(page.title.gsub(' ', '-')) + "\">\n"
+        of.write content
         of.write "\n\n"
       end
       of.close
 
       generate_toc
+
+      # check out all non-page files into the output directory (images and whatnot)
+      @wiki.non_pages.each do |path|
+        write_to = outpath(path)
+        FileUtils.mkdir_p(::File.dirname(write_to))
+        wt = ::File.open(write_to, 'w+')
+        wt.write @wiki.file(path).raw_data
+        wt.close
+      end
 
       checksums[:base] = version
       save_yml_file(checksums_path, checksums)
@@ -119,7 +136,27 @@ module Gollum
       end
     end
 
+    def rewrite_asset_links(data)
+      data.gsub!(/src="(\/.*?)"/).each do |link|
+        url = $1
+        "src=\".#{url}\""
+      end
+      data.gsub(/href="\/(.*?)"/).each do |link|
+        url = $1
+        "href=\"##{url}\""
+      end
+    end
+
     def generate_html
+      generate_base
+      source = ::File.read(outpath(@base_html_file))
+      outfile_path = outpath(@single_html_file)
+
+      of = ::File.open(outfile_path, 'w+')
+      of.write(source)
+      of.close
+
+      outfile_path
     end
 
     def strip_html(str)
@@ -143,8 +180,13 @@ module Gollum
     end
 
     def parse_settings
-      yml = @wiki.file(@settings_file).raw_data
-      @settings = YAML::parse(yml).transform
+      yml = @wiki.file(@settings_file)
+      if yml
+        data = yml.raw_data
+        @settings = YAML::parse(data).transform
+      else
+        @settings = {}
+      end
     end
 
     # do wildcard matching on string from pattern

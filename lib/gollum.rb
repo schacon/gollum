@@ -6,6 +6,7 @@ require 'ostruct'
 require 'grit'
 require 'github/markup'
 require 'sanitize'
+require 'liquid'
 
 # internal
 require 'gollum/git_access'
@@ -22,6 +23,8 @@ require 'gollum/document'
 
 module Gollum
   VERSION = '1.3.0'
+
+  GOLLUM_ROOT = ::File.expand_path(::File.join(::File.dirname(__FILE__), '..'))
 
   class Error < StandardError; end
 

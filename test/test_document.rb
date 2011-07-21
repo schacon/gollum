@@ -70,6 +70,7 @@ context "Document" do
     assert_match '<h3 id="Sub-Subsection">', source
     assert_match '<img src="./Mordor/eye.jpg"', source
     assert_match 'href="#Hobbit">', source
+    `open #{path}`
   end
 
   xtest "generate html site" do

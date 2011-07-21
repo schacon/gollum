@@ -1,6 +1,7 @@
 module Gollum
   class Document
 
+
     # wiki object used as a base for the document
     attr_reader :wiki
 
@@ -152,8 +153,18 @@ module Gollum
       source = ::File.read(outpath(@base_html_file))
       outfile_path = outpath(@single_html_file)
 
+      asset_dir = ::File.join(GOLLUM_ROOT, 'site', 'default', 'assets')
+      FileUtils.cp_r(asset_dir, outpath('.'))
+
+      index_template = liquid_template('index.html')
+
+      data = { 
+        'book_title' => @settings['title'],
+        'content' => source
+      }
+
       of = ::File.open(outfile_path, 'w+')
-      of.write(source)
+      of.write( index_template.render(data) )
       of.close
 
       outfile_path
@@ -187,6 +198,11 @@ module Gollum
       else
         @settings = {}
       end
+    end
+
+    def liquid_template(file)
+      template_dir = ::File.join(GOLLUM_ROOT, 'site', 'default')
+      Liquid::Template.parse(::File.read(::File.join(template_dir, file)))
     end
 
     # do wildcard matching on string from pattern

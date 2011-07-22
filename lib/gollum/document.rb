@@ -95,6 +95,10 @@ module Gollum
       toc = parse_yml_file(outpath(@toc_file))
     end
 
+    def book_title
+      @settings['title'] || 'Title'
+    end
+
     private
 
     # - write the base consolidated html content file
@@ -145,7 +149,7 @@ module Gollum
         index_template = liquid_template('index.html')
 
         data = { 
-          'book_title' => @settings['title'],
+          'book_title' => book_title,
           'content' => source
         }
 
@@ -173,15 +177,22 @@ module Gollum
         puts @output_path
         Dir.chdir(@output_path) do
           cover_image = @settings['cover'] || 'assets/cover.jpg'
+
+          nav = []
+          toc.each_with_index do |section, i|
+            nav << {:label => "#{i + 1}. " + section['name'], :content => "#{@html_file}##{section['id']}"}
+            section['subsections'].each_with_index do |sub, j|
+              nav << {:label => "#{i + 1}.#{j + 1} " + sub['name'], :content => "#{@html_file}##{sub['id']}"}
+            end
+          end
+
+          # CREATE NCX FILE
           EeePub::NCX.new(
-            :uid => 'xxxx',
-            :title => 'sample',
-            :nav => [
-              {:label => 'Book', :content => @html_file},
-            ]
+            :title => book_title,
+            :nav => nav
           ).save(@ncx_file)
 
-          # create html toc file
+          # CREATE HTML TOC FILE
           html_toc_file = 'toc.html'
           html = ::File.open(html_toc_file, 'w+')
           html.puts('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -203,17 +214,27 @@ module Gollum
           html.puts('<h1 class="centered">* * *</h1></div></body></html>')
           html.close
 
+          # CREATE OPF FILE
           EeePub::OPF.new(
-            :title => 'sample',
-            :identifier => {:value => '0-0000000-0-0', :scheme => 'ISBN'},
+            :title => book_title,
+            # :identifier => {:value => '0-0000000-0-0', :scheme => 'ISBN'},
             :manifest => [
               @html_file,
               html_toc_file,
-              {:href => cover_image}
+              {:id => 'cover', :href => cover_image}
+            ],
+            :guide => [
+              {:type => 'toc',  :title => 'Table of Contents', :href => html_toc_file},
+              {:type => 'text', :title => 'Contents', :href => @html_file}
             ],
             :ncx => @ncx_file
           ).save(@opf_file)
 
+          # stupid cover hack for kindle
+          opf_content = ::File.read(@opf_file)
+          opf_content.gsub!('</metadata>', '<meta name="cover" content="cover"></metadata>')
+          ::File.open(@opf_file, 'w+') { |f| f.write opf_content }
+          # end stupid hack
         end
         outfile_path = outpath(@opf_file)
         if ::File.file?(outfile_path)
@@ -225,11 +246,9 @@ module Gollum
     def generate_mobi
       prereq :mobi, generate_opf do |opf_path|
         Dir.chdir(@output_path) do
-          cmd = "kindlegen -unicode -verbose #{opf_path} -o #{@mobi_file}"
+          cmd = "kindlegen -verbose #{opf_path} -o #{@mobi_file}"
           ex(cmd)
         end
-
-        puts @last_out
         outfile_path = outpath(@mobi_file)
         ::File.file?(outfile_path) ?  outfile_path : false
       end

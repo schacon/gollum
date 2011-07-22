@@ -94,7 +94,11 @@ context "Document" do
     assert ::File.size(path) > 30000 # has images
   end
 
-  xtest "generate mobi" do
+  test "generate mobi" do
+    path = @doc.generate(:mobi)
+    assert path
+    assert ::File.file? path
+    `/Applications/Kindle\\ Previewer.app/Contents/MacOS/Kindle\\ Previewer #{path}`
   end
 
   xtest "generate epub" do

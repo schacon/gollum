@@ -261,18 +261,30 @@ module Gollum
 
     def generate_epub
       prereq :epub, generate_opf do |opf_path|
-        Dir.chdir(@output_path) do
-          outfile_path = outpath(@epub_file)
-          copy_non_pages('epub')
-          FileUtils.cp([@opf_file, @ncx_file, @html_file, 'toc.html'], 'epub')
-          EeePub::OCF::Container.new('epub/' + @opf_file)
-          EeePub::OCF.new(
-            :dir => '/path/to/dir',
-            :container => 'container.opf'
-          )
-              
-          outfile_path
+        pp @output_path
+        outfile_path = outpath(@epub_file)
+
+        flist = @wiki.non_pages.map do |path|
+          {outpath(path) => ::File.dirname(path)}
         end
+        flist << {outpath(@html_file) => ::File.dirname(@html_file)}
+
+        nlist = [ {:label => '1. book', :content => @html_file} ]
+
+        title = book_title
+        epub = EeePub.make do
+          title       title
+          creator     'github'
+          publisher   'github.com'
+          date        '2010-05-06'
+          identifier  'http://example.com/book/foo', :scheme => 'URL'
+          uid         'http://example.com/book/foo'
+          files flist
+          nav   nlist
+        end
+        epub.save(outfile_path)
+
+        outfile_path
       end
     end
 

@@ -127,14 +127,20 @@ module Gollum
         generate_toc
 
         # check out all non-page files into the output directory (images and whatnot)
-        @wiki.non_pages.each do |path|
-          write_to = outpath(path)
-          FileUtils.mkdir_p(::File.dirname(write_to))
-          wt = ::File.open(write_to, 'w+')
-          wt.write @wiki.file(path).raw_data
-          wt.close
-        end
+        copy_non_pages
         outfile_path
+      end
+    end
+
+    def copy_non_pages(dir = nil)
+      @wiki.non_pages.each do |opath|
+        path = opath
+        path = ::File.join(dir, opath) if dir
+        write_to = outpath(path)
+        FileUtils.mkdir_p(::File.dirname(write_to))
+        wt = ::File.open(write_to, 'w+')
+        wt.write @wiki.file(opath).raw_data
+        wt.close
       end
     end
 
@@ -174,7 +180,6 @@ module Gollum
 
     def generate_opf
       prereq :opf, generate_html do |base_path|
-        puts @output_path
         Dir.chdir(@output_path) do
           cover_image = @settings['cover'] || 'assets/cover.jpg'
 
@@ -217,7 +222,7 @@ module Gollum
           # CREATE OPF FILE
           EeePub::OPF.new(
             :title => book_title,
-            # :identifier => {:value => '0-0000000-0-0', :scheme => 'ISBN'},
+            :identifier => {:value => @wiki.version_sha, :scheme => 'GITHUB-SHA'},
             :manifest => [
               @html_file,
               html_toc_file,
@@ -251,6 +256,23 @@ module Gollum
         end
         outfile_path = outpath(@mobi_file)
         ::File.file?(outfile_path) ?  outfile_path : false
+      end
+    end
+
+    def generate_epub
+      prereq :epub, generate_opf do |opf_path|
+        Dir.chdir(@output_path) do
+          outfile_path = outpath(@epub_file)
+          copy_non_pages('epub')
+          FileUtils.cp([@opf_file, @ncx_file, @html_file, 'toc.html'], 'epub')
+          EeePub::OCF::Container.new('epub/' + @opf_file)
+          EeePub::OCF.new(
+            :dir => '/path/to/dir',
+            :container => 'container.opf'
+          )
+              
+          outfile_path
+        end
       end
     end
 

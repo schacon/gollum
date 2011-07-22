@@ -17,7 +17,7 @@ context "Document" do
 
   test "get settings" do
     settings = @doc.settings
-    assert_equal 'Test Doc', settings['title']
+    assert_equal 'My Book', settings['title']
     assert_equal 'Scott Chacon', settings['authors'].first
   end
 
@@ -98,10 +98,13 @@ context "Document" do
     path = @doc.generate(:mobi)
     assert path
     assert ::File.file? path
-    `/Applications/Kindle\\ Previewer.app/Contents/MacOS/Kindle\\ Previewer #{path}`
+    #`/Applications/Kindle\\ Previewer.app/Contents/MacOS/Kindle\\ Previewer #{path}`
   end
 
-  xtest "generate epub" do
+  test "generate epub" do
+    path = @doc.generate(:epub)
+    assert path
+    assert ::File.file? path
   end
 
   # ---- #

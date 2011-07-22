@@ -1,8 +1,6 @@
 Gollum Docs TODO
 ================
 
-* generate mobi (kindlegen)
-
 * generate epub (https://github.com/jugyo/eeepub)
 
 * table of contents sidebar

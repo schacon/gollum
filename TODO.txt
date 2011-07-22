@@ -1,16 +1,27 @@
 Gollum Docs TODO
 ================
 
-* table of contents format (_Document.yml)
+* generate pdf (wkhtml2pdf)
 
-* generate static html (single page, paged)
+* generate mobi (kindlegen)
 
-* read out of a subdirectory ('docs') or a branch ('gh-pages')
+* generate epub (https://github.com/jugyo/eeepub)
 
-* generate ebook stuff (epub, mobi, pdf)
+* table of contents sidebar
+
+
+* selective loading in UI
+
+
+* toc search / filter
 
 * extras (cover, author, etc)
 
+
 * use a template (use ricks fork)
+
+--
+
+* read out of a subdirectory ('docs') or a branch ('gh-pages')
 
 

@@ -1,7 +1,6 @@
 module Gollum
   class Document
 
-
     # wiki object used as a base for the document
     attr_reader :wiki
 
@@ -22,11 +21,18 @@ module Gollum
 
       @base_html_file = 'base.html'
       @checksums_file = 'checksums.yml'
-      @toc_file = 'toc.yml'
+      @toc_file       = 'toc.yml'
 
-      @single_html_file = 'single.html'
+      @html_file = 'doc.html'
+      @pdf_file  = 'doc.pdf'
+      @mobi_file = 'doc.mobi'
+      @epub_file = 'doc.epub'
 
       parse_settings
+    end
+
+    def valid?
+      @settings['toc']
     end
 
     # filter and order the wiki pages according to the document settings file
@@ -39,15 +45,35 @@ module Gollum
       toc.flatten.uniq.compact
     end
 
-    def generate(type = :html)
+    # check for the generated document artifact, either return false if it hasn't
+    # been generated yet, or return the path to the artifact
+    def path(type = :base)
+      version = @wiki.version_sha
+      checksums_path = outpath(@checksums_file)
+      checksums = parse_yml_file(checksums_path)
+
+      path = false
+      case type
+      when :base
+        path = outpath(@base_html_file)
+      when :html
+        path = outpath(@html_file)
+      when :pdf
+        path = outpath(@pdf_file)
+      end
+      return path if ::File.file?(path) && (checksums[type] == version)
+      false
+    end
+
+    def generate(type = :base)
       path = generate_base
       case type
       when :base
         return path
       when :html
         return generate_html
-      #when :mobi
-      #  return generate_mobi
+      when :pdf
+        return generate_pdf
       end
     end
 
@@ -72,15 +98,18 @@ module Gollum
 
       return outfile_path if ::File.file?(outfile_path) && (checksums[:base] == version)
 
+      pagecount = 0
       of = ::File.open(outfile_path, 'w+')
       pages.each do |page|
         content = page.formatted_data
         content = insert_section_ids(content)
         content = rewrite_asset_links(content)
+        pagecount += 1
         of.write "<!-- " + page.path + " -->\n"
+        of.write "<div id=\"page-#{pagecount}\" class=\"page\">"
         of.write "<a target=\"" + strip_html(page.title.gsub(' ', '-')) + "\"/>\n"
         of.write content
-        of.write "\n\n"
+        of.write "\n</div>\n\n"
       end
       of.close
 
@@ -101,8 +130,39 @@ module Gollum
       outfile_path
     end
 
+    def generate_html
+      generate_base
+      source = ::File.read(outpath(@base_html_file))
+      outfile_path = outpath(@html_file)
+
+      asset_dir = ::File.join(GOLLUM_ROOT, 'site', 'default', 'assets')
+      FileUtils.cp_r(asset_dir, outpath('.'))
+
+      index_template = liquid_template('index.html')
+
+      data = { 
+        'book_title' => @settings['title'],
+        'content' => source
+      }
+
+      of = ::File.open(outfile_path, 'w+')
+      of.write( index_template.render(data) )
+      of.close
+
+      outfile_path
+    end
+
+    def generate_pdf
+      generate_base
+      base_path = outpath(@base_html_file)
+      outfile_path = outpath(@pdf_file)
+      `wkhtmltopdf #{base_path} #{outfile_path} 2>&1`
+      outfile_path
+    end
+
     # read the base html file and generate a table of contents
     # based on the header tags
+    # TODO: clean this the fuck up - handle properly if a previous h1 or h2 doesn't exist
     def generate_toc
       toc = []
       source = ::File.read(outpath(@base_html_file))
@@ -111,9 +171,17 @@ module Gollum
         if header[0] == '1' 
           toc << sec
         elsif header[0] == '2'
-          toc.last['subsections'] << sec
+          begin
+            toc.last['subsections'] << sec
+          rescue
+            nil
+          end
         else
-          subtoc = toc.last['subsections'].last['subsections'] << sec
+          begin
+            subtoc = toc.last['subsections'].last['subsections'] << sec
+          rescue
+            nil
+          end
         end
       end
       save_yml_file(outpath(@toc_file), toc)
@@ -147,28 +215,6 @@ module Gollum
         url = $1
         "href=\"##{url}\""
       end
-    end
-
-    def generate_html
-      generate_base
-      source = ::File.read(outpath(@base_html_file))
-      outfile_path = outpath(@single_html_file)
-
-      asset_dir = ::File.join(GOLLUM_ROOT, 'site', 'default', 'assets')
-      FileUtils.cp_r(asset_dir, outpath('.'))
-
-      index_template = liquid_template('index.html')
-
-      data = { 
-        'book_title' => @settings['title'],
-        'content' => source
-      }
-
-      of = ::File.open(outfile_path, 'w+')
-      of.write( index_template.render(data) )
-      of.close
-
-      outfile_path
     end
 
     def strip_html(str)

@@ -9,6 +9,12 @@ context "Document" do
     @doc = @wiki.document(:output_path => @path)
   end
 
+  test "get valid" do
+    assert @doc.valid?
+    nondoc = Gollum::Wiki.new(testpath("examples/lotr.git"))
+    assert !nondoc.document
+  end
+
   test "get settings" do
     settings = @doc.settings
     assert_equal 'Test Doc', settings['title']
@@ -36,6 +42,8 @@ context "Document" do
   end
 
   test "copies all needed images, files" do
+    path = @doc.generate(:base)
+    assert ::File.file?(::File.join(@path, 'Mordor', 'eye.jpg'))
   end
 
   test "does not regen html for the same site" do
@@ -70,13 +78,20 @@ context "Document" do
     assert_match '<h3 id="Sub-Subsection">', source
     assert_match '<img src="./Mordor/eye.jpg"', source
     assert_match 'href="#Hobbit">', source
-    `open #{path}`
   end
 
-  xtest "generate html site" do
+  test "can test for path" do
+    path = @doc.path(:base)
+    assert_equal false, path
+    @doc.generate(:base)
+    path = @doc.path(:base)
+    assert_equal ::File.join(@path, 'base.html'), path
   end
 
-  xtest "generate pdf" do
+  test "generate pdf" do
+    path = @doc.generate(:pdf)
+    assert ::File.file? path
+    assert ::File.size(path) > 30000 # has images
   end
 
   xtest "generate mobi" do

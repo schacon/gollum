@@ -178,20 +178,42 @@ module Precious
       mustache :pages
     end
 
+    # Document Methods #
+
     get '/document' do
-      @wiki = Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
+      @wiki = get_wiki
       @doc = @wiki.document
       mustache :document
     end
 
-    get '/document/html' do
-      @wiki = Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
-      path = @wiki.document.generate(:base)
-      ::File.read(path)
+    get '/document/gen/html' do
+      wiki = get_wiki
+      if doc = wiki.document
+        doc.generate(:base)
+        200
+      else
+        404
+      end
     end
+
+    get '/document/html' do
+      wiki = get_wiki
+      if doc = wiki.document
+        if doc.path(:base)
+          return ::File.read(path)
+        end
+      end
+      102 # processing
+    end
+
+    # End Document Methods #
 
     get '/*' do
       show_page_or_file(params[:splat].first)
+    end
+
+    def get_wiki
+      Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
     end
 
     def show_page_or_file(name)

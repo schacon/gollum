@@ -174,7 +174,8 @@ module Gollum
     #
     # Returns a Gollum::Document or nil if no toc was found.
     def document(options = {})
-      ::Gollum::Document.new(self, options)
+      doc = ::Gollum::Document.new(self, options)
+      doc.valid? ? doc : false
     end
 
     # Public: Get path to the actual git repository

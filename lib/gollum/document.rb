@@ -28,6 +28,9 @@ module Gollum
       @mobi_file = 'doc.mobi'
       @epub_file = 'doc.epub'
 
+      @ncx_file  = 'doc.ncx'
+      @opf_file  = 'doc.opf'
+
       parse_settings
     end
 
@@ -60,8 +63,14 @@ module Gollum
         path = outpath(@html_file)
       when :pdf
         path = outpath(@pdf_file)
+      when :mobi
+        path = outpath(@mobi_file)
+      when :epub
+        path = outpath(@epub_file)
+      when :opf
+        path = outpath(@opf_file)
       end
-      return path if ::File.file?(path) && (checksums[type] == version)
+      return path if path && ::File.file?(path) && (checksums[type] == version)
       false
     end
 
@@ -74,6 +83,10 @@ module Gollum
         return generate_html
       when :pdf
         return generate_pdf
+      when :mobi
+        return generate_mobi
+      when :epub
+        return generate_epub
       end
     end
 
@@ -89,75 +102,157 @@ module Gollum
     # - copy referenced images and files into assets directories
     # - write checksum of when these were generated
     def generate_base
-      version = @wiki.version_sha
+      prereq :base do
+        outfile_path = outpath(@base_html_file)
 
-      checksums_path = outpath(@checksums_file)
-      checksums = parse_yml_file(checksums_path)
+        pagecount = 0
+        of = ::File.open(outfile_path, 'w+')
+        pages.each do |page|
+          content = page.formatted_data
+          content = insert_section_ids(content)
+          content = rewrite_asset_links(content)
+          pagecount += 1
+          of.write "<!-- " + page.path + " -->\n"
+          of.write "<div id=\"page-#{pagecount}\" class=\"page\">"
+          of.write "<a target=\"" + strip_html(page.title.gsub(' ', '-')) + "\"/>\n"
+          of.write content
+          of.write "\n</div>\n\n"
+        end
+        of.close
 
-      outfile_path = outpath(@base_html_file)
+        generate_toc
 
-      return outfile_path if ::File.file?(outfile_path) && (checksums[:base] == version)
-
-      pagecount = 0
-      of = ::File.open(outfile_path, 'w+')
-      pages.each do |page|
-        content = page.formatted_data
-        content = insert_section_ids(content)
-        content = rewrite_asset_links(content)
-        pagecount += 1
-        of.write "<!-- " + page.path + " -->\n"
-        of.write "<div id=\"page-#{pagecount}\" class=\"page\">"
-        of.write "<a target=\"" + strip_html(page.title.gsub(' ', '-')) + "\"/>\n"
-        of.write content
-        of.write "\n</div>\n\n"
+        # check out all non-page files into the output directory (images and whatnot)
+        @wiki.non_pages.each do |path|
+          write_to = outpath(path)
+          FileUtils.mkdir_p(::File.dirname(write_to))
+          wt = ::File.open(write_to, 'w+')
+          wt.write @wiki.file(path).raw_data
+          wt.close
+        end
+        outfile_path
       end
-      of.close
-
-      generate_toc
-
-      # check out all non-page files into the output directory (images and whatnot)
-      @wiki.non_pages.each do |path|
-        write_to = outpath(path)
-        FileUtils.mkdir_p(::File.dirname(write_to))
-        wt = ::File.open(write_to, 'w+')
-        wt.write @wiki.file(path).raw_data
-        wt.close
-      end
-
-      checksums[:base] = version
-      save_yml_file(checksums_path, checksums)
-
-      outfile_path
     end
 
     def generate_html
-      generate_base
-      source = ::File.read(outpath(@base_html_file))
-      outfile_path = outpath(@html_file)
+      prereq :html, generate_base do |base_path|
+        source = ::File.read(base_path)
+        outfile_path = outpath(@html_file)
 
-      asset_dir = ::File.join(GOLLUM_ROOT, 'site', 'default', 'assets')
-      FileUtils.cp_r(asset_dir, outpath('.'))
+        asset_dir = ::File.join(GOLLUM_ROOT, 'site', 'default', 'assets')
+        FileUtils.cp_r(asset_dir, outpath('.'))
 
-      index_template = liquid_template('index.html')
+        index_template = liquid_template('index.html')
 
-      data = { 
-        'book_title' => @settings['title'],
-        'content' => source
-      }
+        data = { 
+          'book_title' => @settings['title'],
+          'content' => source
+        }
 
-      of = ::File.open(outfile_path, 'w+')
-      of.write( index_template.render(data) )
-      of.close
+        of = ::File.open(outfile_path, 'w+')
+        of.write( index_template.render(data) )
+        of.close
 
-      outfile_path
+        outfile_path
+      end
     end
 
     def generate_pdf
-      generate_base
-      base_path = outpath(@base_html_file)
-      outfile_path = outpath(@pdf_file)
-      `wkhtmltopdf #{base_path} #{outfile_path} 2>&1`
-      outfile_path
+      prereq :pdf, generate_base do |base_path|
+        outfile_path = outpath(@pdf_file)
+        cmd = "wkhtmltopdf #{base_path} #{outfile_path}"
+        if ex(cmd) 
+          save_checksum(:pdf)
+          outfile_path
+        end
+      end
+    end
+
+    def generate_opf
+      prereq :opf, generate_html do |base_path|
+        puts @output_path
+        Dir.chdir(@output_path) do
+          cover_image = @settings['cover'] || 'assets/cover.jpg'
+          EeePub::NCX.new(
+            :uid => 'xxxx',
+            :title => 'sample',
+            :nav => [
+              {:label => 'Book', :content => @html_file},
+            ]
+          ).save(@ncx_file)
+
+          # create html toc file
+          html_toc_file = 'toc.html'
+          html = ::File.open(html_toc_file, 'w+')
+          html.puts('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+          <html xmlns="http://www.w3.org/1999/xhtml">
+          <head><title>Table of Contents</title></head><body>
+          <div><h1><b>TABLE OF CONTENTS</b></h1><br/>')
+
+          chapters = 0
+          toc.each do |section|
+            chapters += 1
+
+            html.puts('<h3><b>Chapter ' + chapters.to_s + '<br/>')
+            html.puts("<a href=\"#{@html_file}#" + section['id'] + '">' + section['name'] + '</a></b></h3><br/>')
+
+            section['subsections'].each do |sub|
+              html.puts("<a href=\"#{@html_file}#" + sub['id'] + '"><b>' + sub['name'] + '</b></a><br/>')
+            end
+          end
+          html.puts('<h1 class="centered">* * *</h1></div></body></html>')
+          html.close
+
+          EeePub::OPF.new(
+            :title => 'sample',
+            :identifier => {:value => '0-0000000-0-0', :scheme => 'ISBN'},
+            :manifest => [
+              @html_file,
+              html_toc_file,
+              {:href => cover_image}
+            ],
+            :ncx => @ncx_file
+          ).save(@opf_file)
+
+        end
+        outfile_path = outpath(@opf_file)
+        if ::File.file?(outfile_path)
+          outfile_path
+        end
+      end
+    end
+
+    def generate_mobi
+      prereq :mobi, generate_opf do |opf_path|
+        Dir.chdir(@output_path) do
+          cmd = "kindlegen -unicode -verbose #{opf_path} -o #{@mobi_file}"
+          ex(cmd)
+        end
+
+        puts @last_out
+        outfile_path = outpath(@mobi_file)
+        ::File.file?(outfile_path) ?  outfile_path : false
+      end
+    end
+
+
+    def ex(command)
+      @last_out = `#{command} 2>&1`
+      $?.exitstatus == 0
+    end
+
+    def prereq(type, pre = true)
+      if p = path(type)
+        return p 
+      end
+      if !pre
+        return false
+      end
+      path = yield pre
+      if path
+        save_checksum(:base)
+      end
+      path
     end
 
     # read the base html file and generate a table of contents
@@ -235,6 +330,14 @@ module Gollum
       ::File.open(file, 'w+') do |f|
         f.write YAML::dump(data)
       end
+    end
+
+    def save_checksum(type)
+      version = @wiki.version_sha
+      checksums_path = outpath(@checksums_file)
+      checksums = parse_yml_file(checksums_path)
+      checksums[type] = version
+      save_yml_file(checksums_path, checksums)
     end
 
     def parse_settings

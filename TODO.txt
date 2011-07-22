@@ -1,13 +1,18 @@
 Gollum Docs TODO
 ================
 
-* generate pdf (wkhtml2pdf)
-
 * generate mobi (kindlegen)
 
 * generate epub (https://github.com/jugyo/eeepub)
 
 * table of contents sidebar
+  - more accurate toc gen
+
+* error handling and producing
+  - why didn't a gen work
+
+* check
+  - are all the requirements available
 
 
 * selective loading in UI
@@ -17,8 +22,12 @@ Gollum Docs TODO
 
 * extras (cover, author, etc)
 
+* better pdf - toc, cover, paging, etc
+
 
 * use a template (use ricks fork)
+
+* only build unicode if neccesary (kindlgen)
 
 --
 

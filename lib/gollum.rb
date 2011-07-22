@@ -7,6 +7,7 @@ require 'grit'
 require 'github/markup'
 require 'sanitize'
 require 'liquid'
+require 'eeepub'
 
 # internal
 require 'gollum/git_access'

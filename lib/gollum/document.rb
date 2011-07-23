@@ -282,8 +282,6 @@ module Gollum
         flist << {outpath(@html_file) => ::File.dirname(@html_file)}
 
         nlist = get_nav
-
-        # TODO: fix this metadata
         title = book_title
         cr  = @settings['authors'].first rescue 'Anon'
         pub = @settings['publisher'] || 'GitHub Press'

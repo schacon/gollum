@@ -1,8 +1,6 @@
 Gollum Docs TODO
 ================
 
-* generate epub (https://github.com/jugyo/eeepub)
-
 * table of contents sidebar
   - more accurate toc gen
 

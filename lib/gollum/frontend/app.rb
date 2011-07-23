@@ -186,24 +186,27 @@ module Precious
       mustache :document
     end
 
-    get '/document/gen/html' do
-      wiki = get_wiki
-      if doc = wiki.document
-        doc.generate(:base)
-        200
-      else
-        404
-      end
+    get '/document/html' do
+      path = get_doc_path(:base)
+      send_file(path)
     end
 
-    get '/document/html' do
-      wiki = get_wiki
-      if doc = wiki.document
-        if doc.path(:base)
-          return ::File.read(path)
-        end
-      end
-      102 # processing
+    get '/document/pdf' do
+      content_type 'application/pdf'
+      path = get_doc_path(:pdf)
+      send_file(path, :filename => 'book.pdf')
+    end
+
+    get '/document/mobi' do
+      content_type 'application/x-mobipocket-ebook'
+      path = get_doc_path(:mobi)
+      send_file(path, :filename => 'book.mobi')
+    end
+
+    get '/document/epub' do
+      content_type 'application/epub+zip'
+      path = get_doc_path(:epub)
+      send_file(path, :filename => 'book.epub')
     end
 
     # End Document Methods #
@@ -214,6 +217,13 @@ module Precious
 
     def get_wiki
       Gollum::Wiki.new(settings.gollum_path, settings.wiki_options)
+    end
+
+    def get_doc_path(type)
+      wiki = get_wiki
+      halt 500 if !(doc = wiki.document)
+      halt 500 if !(path = doc.generate(type))
+      path
     end
 
     def show_page_or_file(name)

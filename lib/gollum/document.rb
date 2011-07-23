@@ -261,7 +261,6 @@ module Gollum
 
     def generate_epub
       prereq :epub, generate_opf do |opf_path|
-        pp @output_path
         outfile_path = outpath(@epub_file)
 
         flist = @wiki.non_pages.map do |path|
@@ -269,8 +268,10 @@ module Gollum
         end
         flist << {outpath(@html_file) => ::File.dirname(@html_file)}
 
+        # TODO: fix this toc
         nlist = [ {:label => '1. book', :content => @html_file} ]
 
+        # TODO: fix this metadata
         title = book_title
         epub = EeePub.make do
           title       title

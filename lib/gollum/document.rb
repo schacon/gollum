@@ -178,18 +178,31 @@ module Gollum
       end
     end
 
+    def get_nav
+      nav = []
+      toc.each_with_index do |section, i|
+        nav << {:label => "#{i + 1}. " + section['name'], :content => "#{@html_file}##{section['id']}"}
+        section['subsections'].each_with_index do |sub, j|
+          nav << {:label => "#{i + 1}.#{j + 1} " + sub['name'], :content => "#{@html_file}##{sub['id']}"}
+        end
+      end
+      nav
+    end
+
+    def book_identifier
+      @wiki.version_sha
+    end
+
+    def book_identifier_scheme
+      "GITHUB-SHA"
+    end
+
     def generate_opf
       prereq :opf, generate_html do |base_path|
         Dir.chdir(@output_path) do
           cover_image = @settings['cover'] || 'assets/cover.jpg'
 
-          nav = []
-          toc.each_with_index do |section, i|
-            nav << {:label => "#{i + 1}. " + section['name'], :content => "#{@html_file}##{section['id']}"}
-            section['subsections'].each_with_index do |sub, j|
-              nav << {:label => "#{i + 1}.#{j + 1} " + sub['name'], :content => "#{@html_file}##{sub['id']}"}
-            end
-          end
+          nav = get_nav
 
           # CREATE NCX FILE
           EeePub::NCX.new(
@@ -222,7 +235,7 @@ module Gollum
           # CREATE OPF FILE
           EeePub::OPF.new(
             :title => book_title,
-            :identifier => {:value => @wiki.version_sha, :scheme => 'GITHUB-SHA'},
+            :identifier => {:value => book_identifier, :scheme => book_identifier_scheme},
             :manifest => [
               @html_file,
               html_toc_file,
@@ -268,18 +281,21 @@ module Gollum
         end
         flist << {outpath(@html_file) => ::File.dirname(@html_file)}
 
-        # TODO: fix this toc
-        nlist = [ {:label => '1. book', :content => @html_file} ]
+        nlist = get_nav
 
         # TODO: fix this metadata
         title = book_title
+        cr  = @settings['authors'].first rescue 'Anon'
+        pub = @settings['publisher'] || 'GitHub Press'
+        dt  = Time.now.strftime("%Y-%m-%d")
+        bid = book_identifier
+        bids = book_identifier_scheme
         epub = EeePub.make do
           title       title
-          creator     'github'
-          publisher   'github.com'
-          date        '2010-05-06'
-          identifier  'http://example.com/book/foo', :scheme => 'URL'
-          uid         'http://example.com/book/foo'
+          creator     cr
+          publisher   pub
+          date        dt
+          identifier  bid, :scheme => bids
           files flist
           nav   nlist
         end

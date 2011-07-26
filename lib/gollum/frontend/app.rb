@@ -209,6 +209,14 @@ module Precious
       send_file(path, :filename => 'book.epub')
     end
 
+    get '/formula/*' do
+      halt 500 if !(doc = get_wiki.document)
+      halt 500 if !(path = doc.output_path)
+      file = params[:splat].first
+      path = ::File.join(path, 'formula', file)
+      send_file(path)
+    end
+
     # End Document Methods #
 
     get '/*' do

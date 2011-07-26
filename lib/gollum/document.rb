@@ -115,6 +115,7 @@ module Gollum
           content = page.formatted_data
           content = insert_section_ids(content)
           content = rewrite_asset_links(content)
+          content = render_tex(content)
           pagecount += 1
           of.write "<!-- " + page.path + " -->\n"
           name = strip_html(page.title.gsub(' ', '-'))
@@ -279,6 +280,9 @@ module Gollum
         flist = @wiki.non_pages.map do |path|
           {outpath(path) => ::File.dirname(path)}
         end
+        Dir.glob(outpath('/formula/*.png')) do |formula|
+          flist << {formula => "formula"}
+        end
         flist << {outpath(@html_file) => ::File.dirname(@html_file)}
 
         nlist = get_nav
@@ -378,6 +382,22 @@ module Gollum
         url = $1
         "href=\"##{url}\""
       end
+    end
+
+    def render_tex(data)
+      data.gsub!(/<script type="math\/tex(.*?)">(.*?)<\/script>/m).each do |tex|
+        extra = $1
+        formula = $2
+        formula.gsub!(/\\$/, "\\\\\\") # won't write the proper endings otherwise
+        fname = Digest::SHA1.hexdigest(formula)[0,30]
+        Dir.chdir(@output_path) do
+          FileUtils.mkdir('formula') if !::File.exists? 'formula'
+          ::File.open("formula/#{fname}.tex", 'w+') { |f| f.write(formula) }
+          `tex2im -o formula/#{fname}.png formula/#{fname}.tex`
+        end
+        "<img src=\"formula/#{fname}.png\"/>"
+      end
+      data
     end
 
     def strip_html(str)

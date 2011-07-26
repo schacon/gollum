@@ -69,7 +69,6 @@ context "Document" do
     assert size1 != size2
   end
 
-
   test "generate single html file" do
     path = @doc.generate(:html)
     source = File.read(path)
@@ -78,6 +77,14 @@ context "Document" do
     assert_match '<h3 id="Sub-Subsection">', source
     assert_match '<img src="./Mordor/eye.jpg"', source
     assert_match 'href="#Hobbit">', source
+  end
+
+  test "math is rendered as an image" do
+    wiki = Gollum::Wiki.new(testpath("examples/doc.git"), :ref => 'math')
+    doc = wiki.document(:output_path => @path)
+    path = doc.generate(:html)
+    source = File.read(path)
+    assert_match '<img src="formula/b795ae08d2273bde2cc7f67e8592bf.png"/>', source
   end
 
   test "can test for path" do

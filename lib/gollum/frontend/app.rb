@@ -194,7 +194,7 @@ module Precious
     get '/document/pdf' do
       content_type 'application/pdf'
       path = get_doc_path(:pdf)
-      send_file(path, :filename => 'book.pdf')
+      send_file(path, :filename => 'book.pdf', :last_modified => Time.now)
     end
 
     get '/document/mobi' do

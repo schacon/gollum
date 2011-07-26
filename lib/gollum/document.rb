@@ -117,8 +117,8 @@ module Gollum
           content = rewrite_asset_links(content)
           pagecount += 1
           of.write "<!-- " + page.path + " -->\n"
-          of.write "<div id=\"page-#{pagecount}\" class=\"page\">"
-          of.write "<a target=\"" + strip_html(page.title.gsub(' ', '-')) + "\"/>\n"
+          name = strip_html(page.title.gsub(' ', '-'))
+          of.write "<div name=\"#{name}\" id=\"page-#{pagecount}\" class=\"page\">"
           of.write content
           of.write "\n</div>\n\n"
         end
@@ -168,7 +168,7 @@ module Gollum
     end
 
     def generate_pdf
-      prereq :pdf, generate_base do |base_path|
+      prereq :pdf, generate_html do |base_path|
         outfile_path = outpath(@pdf_file)
         cmd = "wkhtmltopdf #{base_path} #{outfile_path}"
         if ex(cmd) 

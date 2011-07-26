@@ -233,6 +233,7 @@ module Precious
         @name = name
         @content = page.formatted_data
         @editable = true
+        @doc = wiki.document
         mustache :page
       elsif file = wiki.file(name)
         content_type file.mime_type

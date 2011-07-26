@@ -23,6 +23,10 @@ module Precious
         @editable
       end
 
+      def document
+        @doc
+      end
+
       def has_footer
         @footer = (@page.footer || false) if @footer.nil?
         !!@footer

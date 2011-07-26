@@ -278,4 +278,30 @@ pre {
   padding: 15px;
 }
 
+/* @control syntax */
+.highlight  { background: #ffffff; }
+.highlight .c { color: #999988; font-style: italic } 
+.highlight .err { color: #a61717; background-color: #e3d2d2 } 
+.highlight .k { font-weight: bold } 
+.highlight .o { font-weight: bold } 
+.highlight .cm { color: #999988; font-style: italic } 
+.highlight .cp { color: #999999; font-weight: bold } 
+.highlight .c1 { color: #999988; font-style: italic } 
+.highlight .cs { color: #999999; font-weight: bold; font-style: italic } 
+.highlight .gd { color: #000000; background-color: #ffdddd } 
+.highlight .gd .x { color: #000000; background-color: #ffaaaa } 
+.highlight .ge { font-style: italic } 
+.highlight .gr { color: #aa0000 } 
+.highlight .gh { color: #999999 } 
+.highlight .gi { color: #000000; background-color: #ddffdd } 
+.highlight .gi .x { color: #000000; background-color: #aaffaa } 
+.highlight .gc { color: #999; background-color: #EAF2F5 }
+.highlight .go { color: #888888 } 
+.highlight .gp { color: #555555 } 
+.highlight .gs { font-weight: bold } 
+.highlight .gu { color: #aaaaaa } 
+.highlight .gt { color: #aa0000 } 
+
 /* vim: set ft=css ts=4 sw=4 noexpandtab: */
+
+

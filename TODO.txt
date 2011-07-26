@@ -1,6 +1,11 @@
 Gollum Docs TODO
 ================
 
+* _Document.yml file generator
+
+* fix math
+  - use l2p for docs (bundle it)
+
 * table of contents sidebar
   - more accurate toc gen
 

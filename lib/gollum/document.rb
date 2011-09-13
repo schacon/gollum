@@ -429,6 +429,10 @@ module Gollum
     end
 
     def parse_settings
+      if @wiki.page_file_dir
+        @settings_file = ::File.join( @wiki.page_file_dir, @settings_file )
+      end
+
       yml = @wiki.file(@settings_file)
       if yml
         data = yml.raw_data

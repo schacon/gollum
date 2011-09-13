@@ -3,4 +3,3 @@ pkg
 .DS_Store
 .bundle
 Gemfile.lock
-test/examples/worstcase
